@@ -1,4 +1,4 @@
-import { formatBytes, formatDate } from "@/lib/helper";
+import { formatBytes, formatDate, formatProgressSize } from "@/lib/helper";
 import { VideoItem } from "@/types/types";
 import Image from "next/image";
 import ProgressBar from "./ProgressBar";
@@ -89,6 +89,10 @@ function VideoRow({
 
       {(item.status === "uploading" || item.status === "done" || item.status === "error") && (
         <div className="pr-8">
+          <div className="flex items-center justify-between text-xs text-gray-400" dir="ltr">
+            <span>{formatProgressSize(item.progress, item.file.size)}</span>
+            <span>{item.progress}%</span>
+          </div>
           <ProgressBar value={item.progress} status={item.status} />
           {item.status === "error" && <p className="text-xs text-red-500 mt-1">{item.error}</p>}
         </div>

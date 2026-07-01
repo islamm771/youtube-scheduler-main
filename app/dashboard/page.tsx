@@ -6,8 +6,8 @@ import { UploadStatus, VideoItem } from "@/types/types";
 import { useCallback, useRef, useState } from "react";
 import BulkApply from "../components/ui/BulkApply";
 import ErrorSummary from "../components/ui/ErrorSummary";
-import Navbar from "../components/ui/Navbar";
 import PublishSettings from "../components/ui/PublishSettings";
+import StepHeader from "../components/ui/StepHeader";
 import ThumbnailUploader from "../components/ui/ThumbnailUploader";
 import UploadActions from "../components/ui/UploadActions";
 import UploadProgress from "../components/ui/UploadProgress";
@@ -163,13 +163,18 @@ export default function Dashboard() {
 
     if (!valid.length) return;
 
-    const pool = valid.map((f) => ({ file: f, url: URL.createObjectURL(f) }));
-    setThumbPool(pool);
+    const newItems = valid.map((f) => ({ file: f, url: URL.createObjectURL(f) }));
 
-    setVideos((prev) => prev.map((v, i) => {
-      const picked = pool.length ? pool[i % pool.length] : undefined;
-      return { ...v, thumbnail: picked?.file, thumbnailPreview: picked?.url };
-    }));
+    setThumbPool((prev) => {
+      const pool = [...prev, ...newItems];
+
+      setVideos((prevVideos) => prevVideos.map((v, i) => {
+        const picked = pool.length ? pool[i % pool.length] : undefined;
+        return { ...v, thumbnail: picked?.file, thumbnailPreview: picked?.url };
+      }));
+
+      return pool;
+    });
   };
 
   const removeThumbnail = (index: number) => {
@@ -201,76 +206,98 @@ export default function Dashboard() {
 
   return (
     <>
-      <Navbar />
-      <main className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
-        <div className="max-w-3xl mx-auto space-y-5">
+      <div className="max-w-5xl mx-auto p-6 space-y-6">
 
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">جدولة فيديوهات يوتيوب</h1>
-            <p className="text-sm text-gray-400 mt-1">ارفع حتى 30 فيديو — كل فيديو ينزل في يومه أوتوماتيك</p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">جدولة فيديوهات يوتيوب</h1>
+          <p className="text-sm text-gray-400 mt-1">اتبع الخطوات دي بالترتيب — كل فيديو هينزل في يومه أوتوماتيك</p>
+        </div>
 
-          <PublishSettings
-            startDate={startDate}
-            pubTime={pubTime}
-            intervalDays={intervalDays}
-            uploading={uploading}
-            total={total}
-            lastDate={lastDate}
-            onStartDateChange={(v) => { setStartDate(v); recomputeDates(v, pubTime, intervalDays); }}
-            onPubTimeChange={(v) => { setPubTime(v); recomputeDates(startDate, v, intervalDays); }}
-            onIntervalChange={(v) => { setIntervalDays(v); recomputeDates(startDate, pubTime, v); }}
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* الخطوة 1: جدول النشر */}
+          <section className="space-y-3">
+            <StepHeader step={1} title="جدول النشر" description="حدّد إمتى أول فيديو ينزل، وكل قد إيه بين فيديو وفيديو" />
+            <div className="pr-9">
+              <PublishSettings
+                startDate={startDate}
+                pubTime={pubTime}
+                intervalDays={intervalDays}
+                uploading={uploading}
+                total={total}
+                lastDate={lastDate}
+                onStartDateChange={(v) => { setStartDate(v); recomputeDates(v, pubTime, intervalDays); }}
+                onPubTimeChange={(v) => { setPubTime(v); recomputeDates(startDate, v, intervalDays); }}
+                onIntervalChange={(v) => { setIntervalDays(v); recomputeDates(startDate, pubTime, v); }}
+              />
+            </div>
+          </section>
 
-          <ThumbnailUploader
-            thumbPool={thumbPool}
-            thumbError={thumbError}
-            uploading={uploading}
-            onFilesSelected={applyThumbnails}
-            onRemove={removeThumbnail}
-            onClearAll={clearThumbnails}
-          />
+          {/* الخطوة 2: أضف الفيديوهات */}
+          <section className="space-y-3">
+            <StepHeader step={2} title="أضف فيديوهاتك" description="اسحب الملفات أو اختارها من جهازك" badge={total > 0 ? `${total} مُضاف` : undefined} />
+            <div className="pr-9">
+              <VideoDropzone uploading={uploading} onDrop={onDrop} onFilesSelected={addFiles} />
+            </div>
+          </section>
+        </div>
 
-          <VideoDropzone uploading={uploading} onDrop={onDrop} onFilesSelected={addFiles} />
+        {/* الخطوة 3: تخصيص جماعي (اختياري) */}
+        {total > 0 && (
+          <section className="space-y-3">
+            <StepHeader step={3} title="تخصيص جماعي" description="اختياري — طبّق صورة أو وصف أو tags على كل الفيديوهات دفعة واحدة" />
+            <div className="pr-9 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <ThumbnailUploader
+                thumbPool={thumbPool}
+                thumbError={thumbError}
+                uploading={uploading}
+                onFilesSelected={applyThumbnails}
+                onRemove={removeThumbnail}
+                onClearAll={clearThumbnails}
+              />
+              <BulkApply
+                uploading={uploading}
+                onApplyDescription={applyDescriptionToAll}
+                onApplyTags={applyTagsToAll}
+              />
+            </div>
+          </section>
+        )}
 
-          {total > 0 && (
-            <BulkApply
-              uploading={uploading}
-              onApplyDescription={applyDescriptionToAll}
-              onApplyTags={applyTagsToAll}
-            />
-          )}
-
-          {total > 0 && (
-            <section className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">الفيديوهات ({total})</h2>
+        {/* الخطوة 4: مراجعة كل فيديو */}
+        {total > 0 && (
+          <section className="space-y-3">
+            <StepHeader step={4} title="راجع كل فيديو" description="عدّل العنوان أو الوصف أو التاجز أو الصورة لأي فيديو لوحده" />
+            <div className="pr-9 space-y-2">
+              <div className="flex items-center justify-end">
                 {!uploading && (
                   <button onClick={() => setVideos([])} className="text-xs text-gray-400 hover:text-red-400 transition-colors">
                     مسح الكل
                   </button>
                 )}
               </div>
-              <div className="space-y-2 max-h-125 overflow-y-auto">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
                 {videos.map((item, i) => (
                   <VideoRow key={item.file.name} item={item} index={i}
                     onRemove={removeVideo} onTitleChange={updateTitle} onDescriptionChange={updateDescription}
                     uploading={uploading} onThumbnailChange={updateThumbnail} onTagsChange={updateTags} />
                 ))}
               </div>
-            </section>
-          )}
+            </div>
+          </section>
+        )}
 
-          {uploading && <UploadProgress done={done} total={total} overallPct={overallPct} />}
+      </div>
 
-          {total > 0 && (
+      {/* شريط تحكم ثابت أسفل عمود المحتوى — دايمًا في مرمى العين حتى مع قايمة فيديوهات طويلة */}
+      {total > 0 && (
+        <div className="sticky bottom-0 border-t border-gray-100 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm">
+          <div className="max-w-5xl mx-auto p-4 space-y-3">
+            {uploading && <UploadProgress done={done} total={total} overallPct={overallPct} />}
+            {!uploading && <ErrorSummary errors={errors} />}
             <UploadActions uploading={uploading} total={total} done={done} onStart={startUpload} onCancel={cancelUpload} />
-          )}
-
-          {!uploading && <ErrorSummary errors={errors} />}
-
+          </div>
         </div>
-      </main>
+      )}
     </>
   );
 }

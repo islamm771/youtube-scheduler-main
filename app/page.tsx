@@ -2,7 +2,6 @@
 
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import Navbar from "./components/ui/Navbar";
 
 const features = [
   { icon: "📅", title: "جدولة تلقائية", desc: "حدد وقت واحد وكل فيديو ينزل في يومه أوتوماتيك" },
@@ -13,13 +12,9 @@ const features = [
 export default function HomePage() {
   const { data: session } = useSession();
 
-  // updatedddddddddd
-
 
   return (
-    <>
-      <Navbar />
-      <main className="bg-gray-50 dark:bg-gray-950">
+    <main className="bg-gray-50 dark:bg-gray-950">
         <div className="max-w-3xl mx-auto px-6 py-16 space-y-16">
 
           {/* Hero */}
@@ -80,6 +75,5 @@ export default function HomePage() {
 
         </div>
       </main>
-    </>
   );
 }
