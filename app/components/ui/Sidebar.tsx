@@ -11,20 +11,35 @@ const navItems = [
   { href: "/dashboard", label: "لوحة التحكم", icon: "🗂️" },
 ];
 
-function Sidebar() {
+function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data: session } = useSession();
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 shrink-0 h-screen sticky top-0 border-l border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col">
+    <aside
+      className={`
+        fixed inset-y-0 right-0 z-40 w-64 shrink-0
+        border-l border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col
+        transform transition-transform duration-200 ease-in-out
+        ${open ? "translate-x-0" : "translate-x-full"}
+        lg:translate-x-0 lg:sticky lg:top-0 lg:inset-y-auto lg:h-screen
+      `}
+    >
       {/* الشعار */}
-      <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-        <Link href="/" className="flex items-center gap-2">
+      <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2" onClick={onClose}>
           <span className="text-lg">▶️</span>
           <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
             YouTube Scheduler
           </span>
         </Link>
+        <button
+          onClick={onClose}
+          aria-label="إغلاق القائمة"
+          className="lg:hidden text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1"
+        >
+          ✕
+        </button>
       </div>
 
       {/* روابط التنقل */}
@@ -35,6 +50,7 @@ function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
                 active
                   ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium"
@@ -84,6 +100,7 @@ function Sidebar() {
         ) : (
           <Link
             href="/login"
+            onClick={onClose}
             className="block w-full text-center text-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg transition-colors"
           >
             تسجيل الدخول
